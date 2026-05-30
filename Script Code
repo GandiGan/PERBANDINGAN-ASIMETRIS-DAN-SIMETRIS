@@ -1,0 +1,71 @@
+import time
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
+
+def jalankan_pengujian():
+    teks_input = input("Masukkan teks yang ingin dienkripsi: ")
+
+    pesan_asli = teks_input.encode('utf-8')
+
+    print("\nPesan Asli yang Diuji:")
+    print(teks_input)
+    print("-" * 65)
+    
+    # 1. PENGUJIAN METODE SIMETRIS (AES / FERNET)
+    print("1. KRIPTOGRAFI SIMETRIS (AES / Fernet)")
+
+    kunci_simetris = Fernet.generate_key()
+    cipher_suite = Fernet(kunci_simetris)
+
+    mulai_enkripsi = time.perf_counter()
+    ciphertext_simetris = cipher_suite.encrypt(pesan_asli)
+    waktu_enkripsi_sim = time.perf_counter() - mulai_enkripsi
+
+    mulai_dekripsi = time.perf_counter()
+    plaintext_simetris = cipher_suite.decrypt(ciphertext_simetris)
+    waktu_dekripsi_sim = time.perf_counter() - mulai_dekripsi
+
+    print(f"Waktu Enkripsi    : {waktu_enkripsi_sim:.6f} detik")
+    print(f"Waktu Dekripsi    : {waktu_dekripsi_sim:.6f} detik")
+    print(f"Ukuran Ciphertext : {len(ciphertext_simetris)} bytes")
+    print("-" * 65)
+
+    # 2. PENGUJIAN METODE ASIMETRIS (RSA 2048-bit)
+    print("2. KRIPTOGRAFI ASIMETRIS (RSA 2048-bit)")
+
+    kunci_privat = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+    kunci_publik = kunci_privat.public_key()
+
+    mulai_enkripsi = time.perf_counter()
+    ciphertext_asimetris = kunci_publik.encrypt(
+        pesan_asli,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    waktu_enkripsi_asim = time.perf_counter() - mulai_enkripsi
+
+    mulai_dekripsi = time.perf_counter()
+    plaintext_asimetris = kunci_privat.decrypt(
+        ciphertext_asimetris,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    waktu_dekripsi_asim = time.perf_counter() - mulai_dekripsi
+
+    print(f"Waktu Enkripsi    : {waktu_enkripsi_asim:.6f} detik")
+    print(f"Waktu Dekripsi    : {waktu_dekripsi_asim:.6f} detik")
+    print(f"Ukuran Ciphertext : {len(ciphertext_asimetris)} bytes")
+    print("-" * 65)
+
+if __name__ == "__main__":
+    jalankan_pengujian()
